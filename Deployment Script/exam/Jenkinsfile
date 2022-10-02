@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        serviceName = 'exam-backend'
+        backendServiceName = 'exam-backend'
+        frontendServiceName = 'exam-frontend'
+        repository = '192.168.56.110:5000'
     }
 
     tools {
@@ -10,7 +12,7 @@ pipeline {
     }
 
     stages {
-        stage('package') {
+        stage('backend package') {
             steps {
                 sh 'ls'
                 echo 'delete target'
@@ -24,25 +26,36 @@ pipeline {
 
         stage('delete container and images') {
             steps {
-                echo 'docker will delete old images'
-                sh 'docker rmi -f \$(docker images | grep $serviceName | awk \'{print $3}\') | true'
+                echo '[$backendServiceName, $frontendServiceName] docker will delete old images'
+                sh 'docker rmi -f \$(docker images | grep $backendServiceName | awk \'{print $3}\') | true'
+                sh 'docker rmi -f \$(docker images | grep $frontendServiceName | awk \'{print $3}\') | true'
             }
         }
 
-        stage('build docker image && push local image to docker repository') {
+        stage('[backend] build docker image && push local image to docker repository') {
             steps {
-                sh 'printenv'
-                echo 'docker build image'
-                sh 'docker build --no-cache -t $serviceName:${BUILD_NUMBER} -f ./exam-admin/Dockerfile .'
-                sh 'docker tag $serviceName:${BUILD_NUMBER} 192.168.56.110:5000/$serviceName:${BUILD_NUMBER}'
-                sh 'docker push 192.168.56.110:5000/$serviceName:${BUILD_NUMBER}'
+                echo '[$backendServiceName] docker build image'
+                sh 'docker build --no-cache -t $backendServiceName:${BUILD_NUMBER} -f ./exam-admin/Dockerfile .'
+                sh 'docker tag $backendServiceName:${BUILD_NUMBER} $repository/$backendServiceName:${BUILD_NUMBER}'
+                sh 'docker push $repository/$backendServiceName:${BUILD_NUMBER}'
+            }
+        }
+
+        stage('[frontend] build docker image && push local image to docker repository') {
+            steps {
+                echo '[$frontendServiceName] docker build image'
+                sh 'docker build --no-cache -t $frontendServiceName:${BUILD_NUMBER} -f ./exam-vue/Dockerfile .'
+                sh 'docker tag $frontendServiceName:${BUILD_NUMBER} $repository/$frontendServiceName:${BUILD_NUMBER}'
+                sh 'docker push $repository/$frontendServiceName:${BUILD_NUMBER}'
             }
         }
 
         stage('deploy image to k8s') {
             steps {
+                sh 'wget https://raw.githubusercontent.com/wzz1206414629/server-config-center/master/Deployment%20Script/exam/k8s.yml'
                 sh "ls"
-                sh "sed -i 's#<image-name>#abc.com/$serviceName:${BUILD_NUMBER}#g;' ./k8s.yml"
+                sh "sed -i 's#<frontend-image-name>#abc.com/$frontendServiceName:${BUILD_NUMBER}#g;' ./k8s.yml"
+                sh "sed -i 's#<backend-image-name>#abc.com/$backendServiceName:${BUILD_NUMBER}#g;' ./k8s.yml"
                 sh 'cat k8s.yml'
                 sh 'kubectl apply -f ./k8s.yml'
             }
