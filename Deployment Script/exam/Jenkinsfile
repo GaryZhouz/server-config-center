@@ -58,6 +58,7 @@ pipeline {
 
         stage('deploy image to k8s') {
             steps {
+                sh 'rm -rf k8s*'
                 sh 'wget https://raw.githubusercontent.com/wzz1206414629/server-config-center/master/Deployment%20Script/exam/k8s.yml'
                 sh "ls"
                 sh "sed -i 's#<frontend-image-name>#abc.com/$frontendServiceName:${BUILD_NUMBER}#g;' ./k8s.yml"
