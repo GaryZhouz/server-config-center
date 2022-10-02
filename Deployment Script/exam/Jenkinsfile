@@ -65,6 +65,9 @@ pipeline {
                 sh "sed -i 's#<backend-image-name>#abc.com/$backendServiceName:${BUILD_NUMBER}#g;' ./k8s.yml"
                 sh 'cat k8s.yml'
                 sh 'kubectl apply -f ./k8s.yml'
+
+                sh 'wget https://raw.githubusercontent.com/wzz1206414629/server-config-center/master/Deployment%20Script/exam/service.yml'
+                sh 'kubectl apply -f ./service.yml'
             }
         }
     }
