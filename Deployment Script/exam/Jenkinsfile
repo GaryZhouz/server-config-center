@@ -12,6 +12,10 @@ pipeline {
     }
 
     stages {
+        stage('clone project') {
+            git credentialsId: '8e2e0e14-aca5-4953-80fe-a121001ab4ed', url: 'git@github.com:wzz1206414629/test_exam.git/'
+        }
+
         stage('backend package') {
             steps {
                 sh 'ls'
