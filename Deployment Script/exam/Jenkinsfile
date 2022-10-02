@@ -41,7 +41,7 @@ pipeline {
         stage('[backend] build docker image && push local image to docker repository') {
             steps {
                 echo '[$backendServiceName] docker build image'
-                sh 'docker build --no-cache -t $backendServiceName:${BUILD_NUMBER} -f ./exam-admin/Dockerfile .'
+                sh 'cd ./exam-admin && docker build --no-cache -t $backendServiceName:${BUILD_NUMBER} .'
                 sh 'docker tag $backendServiceName:${BUILD_NUMBER} $repository/$backendServiceName:${BUILD_NUMBER}'
                 sh 'docker push $repository/$backendServiceName:${BUILD_NUMBER}'
             }
@@ -50,7 +50,7 @@ pipeline {
         stage('[frontend] build docker image && push local image to docker repository') {
             steps {
                 echo '[$frontendServiceName] docker build image'
-                sh 'docker build --no-cache -t $frontendServiceName:${BUILD_NUMBER} -f ./exam-vue/Dockerfile .'
+                sh 'cd ./exam-vue && docker build --no-cache -t $frontendServiceName:${BUILD_NUMBER} .'
                 sh 'docker tag $frontendServiceName:${BUILD_NUMBER} $repository/$frontendServiceName:${BUILD_NUMBER}'
                 sh 'docker push $repository/$frontendServiceName:${BUILD_NUMBER}'
             }
