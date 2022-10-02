@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: exam-backend-container
-          image: <image-name>
+          image: <backend-image-name>
           env:
             - name: DB_HOSTNAME
               value: "192.168.56.110"
@@ -55,29 +55,39 @@ kind: Service
 metadata:
   name: exam-backend-service
 spec:
-  type: NodePort
   selector:
     app: exam-backend
   ports:
     - protocol: TCP
       port: 8888
       targetPort: 8888
-      nodePort: 31000
+# exam-frontend
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: traefik
-  name: application-ingress
+  name: exam-frontend
+  labels:
+    app: exam-frontend
 spec:
-  rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: exam-backend-service
-                port:
-                  number: 8888
+  selector:
+    matchLabels:
+      app: exam-frontend
+  replicas: 1 # 告知 Deployment 运行 2 个与该模板匹配的 Pod
+  template:
+    metadata:
+      labels:
+        app: exam-frontend
+    spec:
+      containers:
+        - name: exam-frontend-container
+          image: <frontend-image-name>
+          resources:
+            limits:
+              cpu: "1"
+              memory: "256Mi"
+            requests:
+              cpu: 500m
+              memory: "128Mi"
+          ports:
+            - containerPort: 8080
