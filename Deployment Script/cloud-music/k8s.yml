@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-music
+  labels:
+    app: cloud-music
+spec:
+  selector:
+    matchLabels:
+      app: cloud-music
+  replicas: 1 # 告知 Deployment 运行 2 个与该模板匹配的 Pod
+  template:
+    metadata:
+      labels:
+        app: cloud-music
+    spec:
+      containers:
+        - name: cloud-music-container
+          image: <image-name>
+          resources:
+            limits:
+              cpu: "1"
+              memory: "256Mi"
+            requests:
+              cpu: 500m
+              memory: "128Mi"
+          ports:
+            - containerPort: 8080
+--- # svc
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-music-service
+spec:
+  selector:
+    app: cloud-music
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

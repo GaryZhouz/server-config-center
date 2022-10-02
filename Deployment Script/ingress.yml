@@ -1,0 +1,80 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: default-automatic-redirect-https@kubernetescrd
+  name: application-ingress
+spec:
+  tls:
+    - hosts:
+        - music.wzzz.fun
+        - jenkins.wzzz.fun
+        - exam.wzzz.fun
+      secretName: music.wzzz.fun
+  rules:
+    - host: music.wzzz.fun
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-music-service
+                port:
+                  number: 8080
+    - host: exam.wzzz.fun
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: exam-frontend-service
+                port:
+                  number: 8080
+    - host: jenkins.wzzz.fun
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jenkins-endpoint
+                port:
+                  number: 9001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: exam-backend-ingress-route
+spec:
+  routes:
+    - kind: Rule
+      match: Host(`exam.wzzz.fun`) && PathPrefix(`/api/`)
+      middlewares:
+        - name: middleware-to-strip-exam-backend-api-path
+      priority: 0
+      services:
+        - name: exam-backend-service
+          port: 8888
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-to-strip-exam-backend-api-path
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: automatic-redirect-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

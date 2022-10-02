@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+
+    environment {
+        serviceName = 'cloud-music'
+        repository = ''
+    }
+
+    stages {
+        stage('delete container and images') {
+            steps {
+                echo '[$serviceName] docker will delete old images'
+                sh 'docker rmi -f \$(docker images | grep $serviceName | awk \'{print $3}\') | true'
+            }
+        }
+
+        stage('build docker image && push local image to docker repository') {
+            steps {
+                sh 'printenv'
+                echo '[$serviceName] docker build image'
+                sh 'docker build --no-cache -t $serviceName:${BUILD_NUMBER} -f .'
+                sh 'docker tag $serviceName:${BUILD_NUMBER} $repository/$serviceName:${BUILD_NUMBER}'
+                sh 'docker push $repository/$serviceName:${BUILD_NUMBER}'
+            }
+        }
+
+        stage('deploy image to k8s') {
+            steps {
+                sh "sed -i 's#<image-name>#$repository/$serviceName:${BUILD_NUMBER}#g;' ./k8s.yml"
+                sh 'cat k8s.yml'
+                sh 'kubectl apply -f ./k8s.yml'
+            }
+        }
+    }
+}
